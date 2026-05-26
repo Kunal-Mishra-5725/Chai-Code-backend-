@@ -1,0 +1,79 @@
+import mongoose from "mongoose"
+import jwt from "jsonwebtoken"
+import bcrypt from "bcrypt"
+
+
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+    index: true, //to make a field searchable
+  },
+  email:{
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
+  fullName: {
+    type: String,
+    required: true,
+    trim: true,
+    index: true,
+  },
+  avatar: {
+    type: String,
+    required: true,
+  },
+  coverImage: {
+    type:String,
+  },
+  watchHistory: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Video",
+  },
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+  },
+
+  refreshToken: {
+    type:String,
+  }
+},{timestamps:true})
+
+userSchema.pre("save", async function(next){
+  if(!this.isModified("password")) return next();
+    this.password=await bcrypt.hash(this.password,10)
+} )
+//to compare the password entered by user with the hashed password stored in database
+userSchema.methods.isPasswordCorrect=async function(password){
+  return await bcrypt.compare(password,this.password)
+}
+//to create access token for user
+//token key is taken from cloudinary and it is stored in .env file for security purpose
+userSchema.methods.generateAccessToken=function(){
+  return jwt.sign({
+    id:this._id, 
+    email:this.email,
+    username:this.username, 
+    fullName:this.fullName
+  },
+  process.env.ACCESS_TOKEN_SECRET,{expiresIn:"1d"})
+}
+//to create refresh token for user
+userSchema.methods.generateRefreshToken=function(){
+  return jwt.sign({
+    id:this._id, 
+    email:this.email,
+    username:this.username, 
+    fullName:this.fullName
+  },
+  process.env.REFRESH_TOKEN_SECRET,{expiresIn:"7d"})
+}
+
+export const User = mongoose.model("User", userSchema)
