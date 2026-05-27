@@ -1,12 +1,12 @@
 //middleware used to verify if user is there or not
 //therefore we used refreshtoken and access token to logout/login user
-import { ApiError } from "../utils/apierrors"
-import { asynchandler } from "../utils/asynchandler"
+import { ApiError } from "../utils/apierrors.js"
+import { asynchandler } from "../utils/asynchandler.js"
 import jwt from "jsonwebtoken"
-import User from "../models/user.model"
+import {User} from "../models/user.models.js"
 
 
-export const verifyJWT=asynchandler(async(req,resizeBy,next)=>{
+export const verifyJWT = asynchandler(async(req,res,next)=>{
     try{
         const token = req.cookies?.accessToken || req.header           //checks if cookies have ..                                     
         ("Authorization")?.replace("Bearer","")                        //.. access data or not
@@ -17,7 +17,7 @@ export const verifyJWT=asynchandler(async(req,resizeBy,next)=>{
 
         const decodeToken=jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
 
-        await User.findById(decodeToken?._id).select
+    const user= await User.findById(decodeToken?._id).select
         ("-password -refreshToken")
 
         //if user is not found then we will throw error

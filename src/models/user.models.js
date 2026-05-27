@@ -2,7 +2,6 @@ import mongoose from "mongoose"
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 
-
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -47,7 +46,7 @@ const userSchema = new mongoose.Schema({
 },{timestamps:true})
 
 userSchema.pre("save", async function(next){
-  if(!this.isModified("password")) return next();
+  if(!this.isModified("password")) return;
     this.password=await bcrypt.hash(this.password,10)
 } )
 //to compare the password entered by user with the hashed password stored in database
@@ -58,7 +57,7 @@ userSchema.methods.isPasswordCorrect=async function(password){
 //token key is taken from cloudinary and it is stored in .env file for security purpose
 userSchema.methods.generateAccessToken=function(){
   return jwt.sign({
-    id:this._id, 
+    _id:this._id, 
     email:this.email,
     username:this.username, 
     fullName:this.fullName

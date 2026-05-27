@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { loginUser, logoutUser, registerUser } from "../controllers/user.controllers.js";
 import { upload } from "../middlewares/multer.middleware.js"; 
-
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { refreshAccessToken } from "../controllers/user.controllers.js";
 
 const router = Router();
 
@@ -22,4 +23,6 @@ router.route("/login").post(loginUser)
 //jwt is required to logout user because we have to verify if user is there or not
 router.route("/logout").post(verifyJWT, logoutUser)
 
+//creating a route for refreshing access token
+router.route("/refresh").post(refreshAccessToken)
 export default router;
