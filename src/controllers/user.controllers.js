@@ -364,6 +364,73 @@ const updateUserCoverImage = asynchandler(async (req, res) => {
   ))
 })
 
+const oldAvatarDeletion= asynchandler(async (req, res) => {
+  const user=await User.findById(req.user._id)
+  if(user?.avatar) {
+    await deleteFromCloudinary(user.avatar)
+  }
+  res.status(200).json(new ApiResponse(200, {}, "Old avatar deleted successfully"))
+})
+
+const getUserChannelProfile= asynchandler(async (req, res) => {
+
+  const {username} = req.params
+  if(!username?.trim) {
+    throw new ApiError(400, "Username is missing")
+  }
+  const channel=User.aggregate([
+    {$match:{
+      username: username?.toLowerCase()
+    }},
+    {$lookup:{
+      from:"subscription",
+      localField:"_id",
+      foreignField:"channel",
+      as:"subscriber"
+    }},
+    {$lookup:{
+      from:"subscription",
+      localField:"_id",
+      foreignField:"subscriber",
+      as:"subscribedTo"
+    }},
+    {$addFields:{
+      subscriberCount:{
+        $size:"$subscriber"
+      },
+      channelsSubscribedToCount:{
+        $size:"$subscribedTo"
+      },
+      isSubscribed: {
+        $cond:{
+          if:{$in:[req.user._id,"$subscriber.subscriber"]},
+          then: true,
+          else: false
+        }
+      }
+    }},
+    {
+      $project:{                 //this pipeline gives details of the selected things which 
+        fullName:1,              //we want to show in channel profile page with value of 1
+        username:1,
+        subscriberCount:1,
+        channelsSubscribedToCount:1,
+        isSubscribed:1,
+        avatar:1,
+        coverImage:1
+      }
+    }
+  ])
+   if(!channel?.length){
+      throw new ApiError(404, "Channel doesnt exist")
+    }
+
+    return res
+    .status(200)
+    .json(
+      new ApiResponse(200, channel[0], "User channel details fetched successfully")
+    )
+})
 
 export { registerUser, loginUser, logoutUser , refreshAccessToken, currentUser , changePassword,
-   updateAccountDetails, updateUserAvatar, updateUserCoverImage};
+   updateAccountDetails, updateUserAvatar, updateUserCoverImage, oldAvatarDeletion, getUserChannelProfile}
